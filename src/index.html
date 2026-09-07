@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Has Housing Rolled Over? Starts, Permits and Prices Since 1947</title>
+<meta name="description" content="Housing starts lead the business cycle by four to six quarters. US starts and permits since 1959, every rollover scored against the recession that followed, prices in both countries, and Canadian starts back to 1948.">
+<link rel="stylesheet" href="/shared-footer/footer.css">
+<style>
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #4a3aa7;
+  --tooltip-bg: rgba(252,252,251,0.97);
+  --warn: #b3541e;
+  --band-alpha: 0.09;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #9085e9;
+    --tooltip-bg: rgba(26,26,25,0.97);
+    --warn: #e08a4f;
+    --band-alpha: 0.13;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --plane: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #9085e9;
+  --tooltip-bg: rgba(26,26,25,0.97);
+  --warn: #e08a4f;
+  --band-alpha: 0.13;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 8px; }
+
+header h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
+header p.sub { margin: 0; color: var(--text-secondary); max-width: 68ch; }
+.chip {
+  display: inline-flex; align-items: baseline; gap: 8px; margin-top: 16px;
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-1); font-size: 0.82rem; color: var(--text-secondary);
+}
+.chip[hidden] { display: none; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-3); flex: none; align-self: center; }
+.chip[data-state="signal"] .dot { background: var(--series-2); }
+.chip b { color: var(--text-primary); font-weight: 650; }
+.stamp { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 24px 0 8px; }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.tile .value { font-size: 1.85rem; font-weight: 650; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tile .note { font-size: 0.8rem; color: var(--text-secondary); }
+
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 14px; margin: 16px 0; }
+.card h2 { font-size: 1.05rem; margin: 0 0 2px; letter-spacing: -0.01em; }
+.card p.cap { margin: 0 0 12px; font-size: 0.85rem; color: var(--text-secondary); max-width: 90ch; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
+.group { display: flex; gap: 4px; flex-wrap: wrap; }
+.group .glabel { font-size: 0.78rem; color: var(--muted); align-self: center; margin-right: 4px; }
+button.seg {
+  font: inherit; font-size: 0.82rem; padding: 5px 11px; cursor: pointer;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 999px;
+}
+button.seg:hover { background: var(--grid); }
+button.seg[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 8px; font-size: 0.85rem; color: var(--text-secondary); }
+.legend span.item { display: flex; align-items: center; gap: 7px; }
+.legend .swatch { width: 14px; height: 3px; border-radius: 2px; }
+.legend .swatch.dashed { background: none !important; border-top: 3px dashed; width: 14px; height: 0; border-radius: 0; }
+.legend .swatch.band { width: 14px; height: 10px; border: 1px solid var(--border); }
+
+.plot { position: relative; width: 100%; }
+canvas { display: block; width: 100%; touch-action: pan-y; }
+.tooltip {
+  position: absolute; pointer-events: none; opacity: 0; transition: opacity .08s;
+  background: var(--tooltip-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 0.8rem; line-height: 1.45; white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.14); z-index: 5; color: var(--text-primary);
+}
+.tooltip .tdate { color: var(--muted); font-size: 0.74rem; margin-bottom: 3px; }
+.tooltip .trow { display: flex; align-items: center; gap: 7px; }
+.tooltip .tval { font-variant-numeric: tabular-nums; margin-left: auto; padding-left: 14px; font-weight: 600; }
+
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+.duo h3 { font-size: 0.9rem; margin: 0 0 8px; color: var(--text-secondary); font-weight: 600; }
+
+.status { color: var(--text-secondary); font-size: 0.9rem; padding: 40px 0; text-align: center; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+td .tag { color: var(--muted); font-size: 0.78rem; }
+.tablewrap { overflow-x: auto; }
+
+.prose { font-size: 0.92rem; color: var(--text-secondary); }
+.prose h3 { font-size: 0.95rem; color: var(--text-primary); margin: 18px 0 6px; }
+.prose ul { padding-left: 20px; margin: 6px 0; }
+.prose li { margin-bottom: 7px; }
+.prose a { color: var(--series-1); }
+.prose code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; background: var(--plane); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+
+/* A figure the data could not supply renders as a visible gap, never as a
+   silently vanished number. */
+[data-tok] { font-variant-numeric: tabular-nums; }
+.tok-missing { color: var(--warn); border-bottom: 1px dashed var(--warn); }
+
+/* The hub footer is styled by /shared-footer/footer.css, linked above and
+   served by Caddy's shared_footer snippet. Deliberately not restyled here. */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Has Housing Rolled Over?</h1>
+    <p class="sub">Residential construction is the earliest real-economy turn: housing starts have peaked one to two years before most postwar US recessions, which is why Leamer's Jackson Hole paper is titled "Housing IS the Business Cycle". This page keeps the score: starts and permits since 1959, every rollover dated two ways and measured against what followed, prices in both countries, and Canadian starts back to 1948. Nothing here is a forecast.</p>
+    <p class="chip" id="chip" hidden></p>
+    <p class="stamp" id="stamp">Loading data…</p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="card">
+    <h2>Starts and permits, monthly since 1959</h2>
+    <p class="cap">Thousands of units at seasonally adjusted annual rates, US Census Bureau. Permits precede starts by a month or two; both precede the economy. Shaded bands are NBER recessions. The single-family view is the purer cyclical signal; multifamily is noisy and structurally driven.</p>
+    <div class="controls">
+      <div class="group" role="group" aria-label="Time range">
+        <span class="glabel">Range</span>
+        <button class="seg" data-range="max" aria-pressed="true">Max</button>
+        <button class="seg" data-range="25">25y</button>
+        <button class="seg" data-range="10">10y</button>
+        <button class="seg" data-range="5">5y</button>
+      </div>
+      <div class="group" role="group" aria-label="Scope">
+        <span class="glabel">Scope</span>
+        <button class="seg" data-scope="total" aria-pressed="true">Total</button>
+        <button class="seg" data-scope="1f" aria-pressed="false">Single-family</button>
+      </div>
+    </div>
+    <div class="legend" id="legend-main"></div>
+    <div class="plot"><canvas id="c-main" height="400"></canvas><div class="tooltip" id="t-main"></div></div>
+    <p class="status" id="status">Fetching seven decades of construction data…</p>
+  </section>
+
+  <section class="card">
+    <h2>Every rollover, scored on two clocks</h2>
+    <p class="cap" id="rule-cap">Computed from the single-family series on every refresh, never hand-maintained. <span data-tok="rule_statement">…</span></p>
+    <div class="tablewrap"><table id="ep-tbl">
+      <thead><tr><th>Starts peaked</th><th>Alarm fired</th><th>Bottom</th><th>Depth</th><th>Recession began</th><th>Lead from peak</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="prose" style="margin:12px 0 0">
+      <p>The two clocks disagree on purpose. Across the <span data-tok="credited">…</span> episodes followed by a recession, the peak in starts led it by a median of <span data-tok="median_lead">…</span> months (range <span data-tok="lead_range">…</span>), which is the four-to-six-quarter lead the literature quotes. But the 20% alarm fired before the recession in only <span data-tok="alarm_led">…</span> of them; the peak you only see in hindsight, the alarm you get when it fires, usually about when the recession does. That gap between the early turn and the late confirmation is the honest shape of housing as a leading indicator.</p>
+      <p>The misses are content too. Recessions with no rollover episode at all: <span data-tok="uncredited">…</span>. The dot-com recession was not housing-led (the yield curve caught it; see <a href="https://yield.chrislawrence.ca">yield</a>), and the pandemic stopped housing and everything else in the same month, too fast for a three-month gate. <strong><span data-tok="newest_label">…</span></strong>: <span data-tok="newest_row">…</span></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Home prices, year over year</h2>
+    <p class="cap">Percent change from a year earlier. Prices lag volumes: starts peaked in 2005 while national prices kept rising into 2006-07, and starts bottomed in 2009 while prices fell into 2012. Case-Shiller is repeat-sales since 1987; FHFA reaches 1975 on conforming mortgages; Canada's NHPI covers new construction only, so it misses the resale market and understates swings.</p>
+    <div class="legend" id="legend-prices"></div>
+    <div class="plot"><canvas id="c-prices" height="340"></canvas><div class="tooltip" id="t-prices"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Housing's weight in the economy, 1947 onward</h2>
+    <p class="cap">Residential investment as a share of GDP, quarterly, BEA. Leamer's chart: the share peaks before recessions and troughs after them. The dashed rule is the full-sample mean of <span data-tok="share_mean">…</span>; the latest reading is <span data-tok="share_latest">…</span>, so housing enters this page's era already below its historical weight.</p>
+    <div class="legend" id="legend-share"></div>
+    <div class="plot"><canvas id="c-share" height="320"></canvas><div class="tooltip" id="t-share"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Sales and supply</h2>
+    <p class="cap">New single-family houses sold, and how many months the for-sale inventory would last at the current sales pace. Supply spiking while sales fall is the bust signature; supply currently sits at <span data-tok="supply_latest">…</span> months against a long-run norm near six.</p>
+    <div class="duo">
+      <div>
+        <h3><span class="swatch" style="background:var(--series-1);display:inline-block;vertical-align:baseline"></span> New home sales, thousands SAAR</h3>
+        <div class="plot"><canvas id="c-sales" height="240"></canvas><div class="tooltip" id="t-sales"></div></div>
+      </div>
+      <div>
+        <h3><span class="swatch" style="background:var(--series-4);display:inline-block;vertical-align:baseline"></span> Months' supply of new houses</h3>
+        <div class="plot"><canvas id="c-supply" height="240"></canvas><div class="tooltip" id="t-supply"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The affordability lever</h2>
+    <p class="cap">30-year fixed mortgage rate, weekly since 1971, Freddie Mac survey. It rides the 10-year Treasury, which makes <a href="https://yield.chrislawrence.ca">the yield curve page</a> the upstream story: the 2022 rate shock that ended the pandemic housing boom is the same event as the inversion scored there.</p>
+    <div class="legend" id="legend-mortgage"></div>
+    <div class="plot"><canvas id="c-mortgage" height="300"></canvas><div class="tooltip" id="t-mortgage"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Canada</h2>
+    <p class="cap">The monthly line is CMHC starts, all areas, seasonally adjusted at annual rates, published from 1990. The deep line is the same starts as a trailing four-quarter total from the unadjusted quarterly series that begins in 1948: an annual total is seasonality-free by construction, no adjustment model involved, and it lands in the same annualized units, so the overlap from 1990 shows the two constructions agreeing. Dotted is single-detached only, from 1955. Shading is the C.D. Howe Business Cycle Council chronology.</p>
+    <div class="legend" id="legend-ca"></div>
+    <div class="plot"><canvas id="c-ca" height="340"></canvas><div class="tooltip" id="t-ca"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Revisions to published history</h2>
+    <p class="cap" id="rev-cap">Checking…</p>
+    <div class="tablewrap" id="rev-wrap" style="display:none"><table id="rev-tbl">
+      <thead><tr><th>Observed</th><th>Series</th><th>Values changed</th><th>Span</th><th>Largest change</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="prose" style="margin:10px 0 0">Census starts and permits are revised routinely: each monthly release restates the prior two months, and annual benchmark revisions reach further back. So unlike the yield page, where a revision is an event, this log is expected to be busy; that is the data behaving normally. Every refresh is diffed against the one before it, and any change to an already-published observation is recorded. New observations are not revisions and are not listed.</p>
+  </section>
+
+  <section class="card">
+    <h2>Sources and construction</h2>
+    <div class="prose" style="margin-top:6px">
+      <h3>United States</h3>
+      <ul>
+        <li><strong>Starts and permits</strong>: Census Bureau and HUD via FRED, all SAAR: <a href="https://fred.stlouisfed.org/series/HOUST">HOUST</a> and <a href="https://fred.stlouisfed.org/series/HOUST1F">HOUST1F</a> (monthly since January 1959), <a href="https://fred.stlouisfed.org/series/PERMIT">PERMIT</a> and <a href="https://fred.stlouisfed.org/series/PERMIT1">PERMIT1</a> (since January 1960).</li>
+        <li><strong>Sales and supply</strong>: <a href="https://fred.stlouisfed.org/series/HSN1F">HSN1F</a> and <a href="https://fred.stlouisfed.org/series/MSACSR">MSACSR</a> (since 1963), units under construction <a href="https://fred.stlouisfed.org/series/UNDCONTSA">UNDCONTSA</a> (since 1970, in the payload).</li>
+        <li><strong>Prices</strong>: Case-Shiller national, seasonally adjusted, <a href="https://fred.stlouisfed.org/series/CSUSHPISA">CSUSHPISA</a> (monthly since 1987); FHFA all-transactions <a href="https://fred.stlouisfed.org/series/USSTHPI">USSTHPI</a> (quarterly since 1975). Year-over-year series are computed here; the index levels ship alongside.</li>
+        <li><strong>The Leamer series</strong>: residential investment share of GDP, BEA via <a href="https://fred.stlouisfed.org/series/A011RE1Q156NBEA">A011RE1Q156NBEA</a>, quarterly since 1947. The citation is Leamer, "Housing IS the Business Cycle", Jackson Hole 2007.</li>
+        <li><strong>Mortgage rate</strong>: Freddie Mac PMMS via <a href="https://fred.stlouisfed.org/series/MORTGAGE30US">MORTGAGE30US</a>, weekly since April 1971.</li>
+        <li><strong>Recession bands</strong>: NBER dates via <a href="https://fred.stlouisfed.org/series/USREC">USREC</a>, from the shared dataset, drawn peak month through trough.</li>
+      </ul>
+      <h3>Canada</h3>
+      <ul>
+        <li><strong>Starts, deep</strong>: CMHC via Statistics Canada table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410013501">34-10-0135-01</a>, vectors v730416 (total) and v730442 (single-detached): actual units per quarter, unadjusted, from 1948 and 1955, still published. The seasonally-adjusted member of that table (v730427) is terminated at 2009 and deliberately unused; the trailing-4-quarter construction here removes seasonality arithmetically instead.</li>
+        <li><strong>Starts, monthly</strong>: table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410015801">34-10-0158-01</a>, vector v52300157, all areas, SAAR, from 1990.</li>
+        <li><strong>Prices</strong>: new housing price index, table <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810020501">18-10-0205-01</a>, vector v111955442, monthly since 1981. New construction only; Teranet and CREA resale indexes are not keyless-redistributable and are not shown.</li>
+        <li><strong>Recession bands</strong>: <a href="https://www.cdhowe.org/wp-content/uploads/2024/12/Commentary_366_0-2.pdf">C.D. Howe Institute Business Cycle Council</a> chronology, from the shared dataset.</li>
+        <li>Every StatCan vector is fetched with its live English title verified against the published table first; a renumbered vector fails loudly rather than charting someone else's numbers.</li>
+      </ul>
+      <h3>Plumbing</h3>
+      <ul>
+        <li>FRED is fetched keyless-first (public CSV), keyed API as fallback; StatCan WDS has no keys at all. A failed fetch carries the stored series forward and says so rather than blanking a chart.</li>
+        <li>Refreshes daily via cron. Releases scatter across the month (starts mid-month, permits later, Case-Shiller the last Tuesday, FHFA quarterly, StatCan on its own calendar), so most runs verify rather than change; the stamp above says when data last moved.</li>
+        <li>Series follow the shared <code>econ-core</code> contract used across <a href="https://yield.chrislawrence.ca">yield</a>, <a href="https://jobs.chrislawrence.ca">jobs</a>, <a href="https://debt.chrislawrence.ca">debt</a> and <a href="https://diesel.chrislawrence.ca">diesel</a>, with a vintages field reserved for as-published (ALFRED) views. Housing is where that will matter most: starts revisions are material, and "what did the rollover look like in real time in 2006" is the honest version of this page's main chart. Designed in now, populated later.</li>
+        <li>Raw data: <a href="/api/data">/api/data</a>, or the files under <a href="/data/series.json">/data/</a>.</li>
+        <li>Assembled with Claude (Anthropic). Measured series, one cited framing, and computed history with the rule printed; no forecasts, no valuation calls.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<footer class="chrislawrence-footer">
+  <a href="https://chrislawrence.ca" class="footer-home-link" aria-label="Back to chrislawrence.ca">
+    <img src="/shared-footer/logo-portrait.png" alt="Chris Lawrence" class="footer-logo"
+         width="32" height="32" loading="lazy" onerror="this.remove()">
+    <span class="footer-home-link-text">Back to chrislawrence.ca</span>
+  </a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var YEAR = 365.25 * 86400000;
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var state = { p: null, range: "max", scope: "total" };
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function rgba(hex, a) {
+    var n = parseInt(hex.replace("#", ""), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function ms(iso) { return Date.parse(iso + "T00:00:00Z"); }
+  function pts(entry) { return entry.obs.map(function (o) { return [ms(o[0]), o[1]]; }); }
+  function monthWord(ym) { var q = ym.split("-"); return MONTHS[+q[1] - 1] + " " + q[0]; }
+
+  function fmtK(v) {
+    if (v === null || !isFinite(v)) return "—";
+    return Math.round(v).toLocaleString() + "k";
+  }
+  function fmtPct1(v) { return v === null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%"; }
+  function fmtPct2v(v) { return v === null ? "—" : v.toFixed(2) + "%"; }
+
+  function niceTicks(lo, hi, target) {
+    var span = hi - lo; if (span <= 0) span = 1;
+    var raw = span / target;
+    var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var norm = raw / mag;
+    var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+    var ticks = [];
+    for (var k = Math.ceil(lo / step); k * step <= hi + step * 0.001; k++) {
+      ticks.push(Math.round(k * step * 1e6) / 1e6);
+    }
+    return ticks;
+  }
+
+  // ------------------------------------------------------------------
+  // Time-scaled canvas chart: mixed frequencies, recession bands,
+  // dashed segments, threshold rule, crosshair tooltip. Shared engine.
+  // ------------------------------------------------------------------
+  function TimeChart(canvasId, tooltipId, opts) {
+    this.canvas = document.getElementById(canvasId);
+    this.tip = document.getElementById(tooltipId);
+    this.opts = opts || {};
+    this.hover = null;
+    this.h = parseInt(this.canvas.getAttribute("height"), 10) || 300;
+    var self = this;
+    this.canvas.addEventListener("mousemove", function (e) { self.onMove(e.clientX); });
+    this.canvas.addEventListener("mouseleave", function () { self.clearHover(); });
+    this.canvas.addEventListener("touchmove", function (e) { if (e.touches[0]) self.onMove(e.touches[0].clientX); }, { passive: true });
+    this.canvas.addEventListener("touchend", function () { self.clearHover(); });
+    this.canvas.addEventListener("touchcancel", function () { self.clearHover(); });
+  }
+
+  TimeChart.prototype.clearHover = function () { this.hover = null; this.tip.style.opacity = 0; this.draw(); };
+
+  TimeChart.prototype.setData = function (series, bands) {
+    this.series = series.filter(function (s) { return s.points.length; });
+    this.bands = bands || [];
+    var union = [];
+    this.series.forEach(function (s) {
+      s.medGap = medianGap(s.points);
+      s.points.forEach(function (pt) { union.push(pt[0]); });
+    });
+    union.sort(function (a, b) { return a - b; });
+    this.union = union.filter(function (v, i) { return i === 0 || v !== union[i - 1]; });
+    this.hover = null;
+    this.draw();
+  };
+
+  function medianGap(points) {
+    if (points.length < 2) return YEAR;
+    var gaps = [];
+    for (var i = 1; i < points.length; i++) gaps.push(points[i][0] - points[i - 1][0]);
+    gaps.sort(function (a, b) { return a - b; });
+    return gaps[Math.floor(gaps.length / 2)];
+  }
+
+  function nearest(points, t) {
+    var lo = 0, hi = points.length - 1;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (points[mid][0] < t) lo = mid + 1; else hi = mid; }
+    if (lo > 0 && Math.abs(points[lo - 1][0] - t) < Math.abs(points[lo][0] - t)) lo -= 1;
+    return lo;
+  }
+
+  TimeChart.prototype.onMove = function (clientX) {
+    if (!this.geom || !this.union || !this.union.length) return;
+    var rect = this.canvas.getBoundingClientRect();
+    var g = this.geom;
+    var t = this.x0 + (clientX - rect.left - g.left) / (g.right - g.left) * (this.x1 - this.x0);
+    var k = nearest(this.union.map(function (v) { return [v, 0]; }), t);
+    var snapped = this.union[Math.max(0, Math.min(this.union.length - 1, k))];
+    if (snapped === this.hover) return;
+    this.hover = snapped;
+    this.draw();
+    this.showTip(snapped, rect);
+  };
+
+  TimeChart.prototype.showTip = function (t, rect) {
+    var monthly = true;
+    this.series.forEach(function (s) { if (s.medGap < 20 * 86400000) monthly = false; });
+    var html = '<div class="tdate">' + new Date(t).toISOString().slice(0, monthly ? 7 : 10) + "</div>";
+    var shown = 0;
+    this.series.forEach(function (s) {
+      var i = nearest(s.points, t);
+      var pt = s.points[i];
+      if (Math.abs(pt[0] - t) > s.medGap * 0.75) return;
+      html += '<div class="trow"><span class="swatch" style="background:' + css(s.color) + '"></span>' +
+              s.name + '<span class="tval">' + (s.fmt || fmtK)(pt[1]) + "</span></div>";
+      shown++;
+    });
+    if (!shown) { this.tip.style.opacity = 0; return; }
+    this.tip.innerHTML = html;
+    this.tip.style.opacity = 1;
+    var g = this.geom;
+    var px = g.left + (t - this.x0) / (this.x1 - this.x0) * (g.right - g.left);
+    var w = this.tip.offsetWidth;
+    var left = px + 14;
+    if (left + w > rect.width - 4) left = px - w - 14;
+    if (left < 4) left = 4;
+    this.tip.style.left = left + "px";
+    this.tip.style.top = "14px";
+  };
+
+  TimeChart.prototype.draw = function () {
+    var cv = this.canvas, ctx = cv.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth, h = this.h;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cv.style.height = h + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (!this.series || !this.series.length) return;
+
+    var pad = { l: 46, r: 12, t: 10, b: 26 };
+    var g = { left: pad.l, right: w - pad.r, top: pad.t, bottom: h - pad.b };
+    this.geom = g;
+
+    var x0 = Infinity, x1 = -Infinity, lo = Infinity, hi = -Infinity;
+    this.series.forEach(function (s) {
+      s.points.forEach(function (pt) {
+        if (pt[0] < x0) x0 = pt[0];
+        if (pt[0] > x1) x1 = pt[0];
+        if (pt[1] !== null && isFinite(pt[1])) { if (pt[1] < lo) lo = pt[1]; if (pt[1] > hi) hi = pt[1]; }
+      });
+    });
+    if (!isFinite(lo)) return;
+    var padY = (hi - lo) * 0.08 || 1;
+    lo -= padY; hi += padY;
+    if (this.opts.includeZero && lo > 0) lo = 0;
+    if (this.opts.includeZero && hi < 0) hi = 0;
+    this.x0 = x0; this.x1 = x1;
+
+    var muted = css("--muted"), grid = css("--grid"), axis = css("--axis");
+    var X = function (t) { return g.left + (t - x0) / Math.max(1, x1 - x0) * (g.right - g.left); };
+    var Y = function (v) { return g.bottom - (v - lo) / (hi - lo) * (g.bottom - g.top); };
+
+    // recession bands first, behind everything
+    (this.bands || []).forEach(function (b) {
+      var s = Math.max(x0, b.start), e = Math.min(x1, b.end);
+      if (e <= s) return;
+      ctx.fillStyle = b.fill;
+      ctx.fillRect(X(s), g.top, Math.max(1, X(e) - X(s)), g.bottom - g.top);
+    });
+
+    // y grid
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    var yt = niceTicks(lo, hi, 6);
+    var yFmt = this.opts.yFmt || function (v) { return String(Math.round(v * 100) / 100); };
+    yt.forEach(function (v) {
+      var y = Y(v);
+      ctx.strokeStyle = grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(g.left, Math.round(y) + 0.5); ctx.lineTo(g.right, Math.round(y) + 0.5); ctx.stroke();
+      ctx.fillStyle = muted;
+      ctx.fillText(yFmt(v), g.left - 8, y);
+    });
+
+    // zero line where it matters
+    if (lo < 0 && hi > 0) {
+      ctx.strokeStyle = axis; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(g.left, Math.round(Y(0)) + 0.5); ctx.lineTo(g.right, Math.round(Y(0)) + 0.5); ctx.stroke();
+    }
+
+    // threshold rule (the Leamer-chart mean line)
+    if (this.opts.threshold !== undefined && this.opts.threshold > lo && this.opts.threshold < hi) {
+      var ty = Y(this.opts.threshold);
+      ctx.strokeStyle = muted; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(g.left, Math.round(ty) + 0.5); ctx.lineTo(g.right, Math.round(ty) + 0.5); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillStyle = muted;
+      ctx.fillText(this.opts.thresholdLabel || "", g.left + 4, ty - 2);
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    }
+
+    // x ticks: years, thinned by span
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    var firstYear = new Date(x0).getUTCFullYear();
+    var lastYear = new Date(x1).getUTCFullYear();
+    var years = lastYear - firstYear;
+    var stepY = years > 60 ? 10 : years > 30 ? 5 : years > 12 ? 2 : 1;
+    for (var yr = Math.ceil(firstYear / stepY) * stepY; yr <= lastYear; yr += stepY) {
+      var t = Date.UTC(yr, 0, 1);
+      if (t < x0 || t > x1) continue;
+      var px = X(t);
+      ctx.strokeStyle = grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.round(px) + 0.5, g.top); ctx.lineTo(Math.round(px) + 0.5, g.bottom); ctx.stroke();
+      ctx.fillStyle = muted; ctx.fillText(String(yr), px, g.bottom + 6);
+    }
+
+    // axis baseline
+    ctx.strokeStyle = axis; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(g.left, Math.round(g.bottom) + 0.5); ctx.lineTo(g.right, Math.round(g.bottom) + 0.5); ctx.stroke();
+
+    // series
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    var surface = css("--surface-1");
+    this.series.forEach(function (s) {
+      var color = css(s.color);
+      ctx.strokeStyle = color; ctx.lineWidth = s.width || 2;
+      ctx.setLineDash(s.dash ? [5, 4] : []);
+      ctx.beginPath();
+      var pen = false;
+      s.points.forEach(function (pt) {
+        if (pt[1] === null || !isFinite(pt[1])) { pen = false; return; }
+        var xx = X(pt[0]), yy = Y(pt[1]);
+        if (!pen) { ctx.moveTo(xx, yy); pen = true; } else { ctx.lineTo(xx, yy); }
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // crosshair + hover markers
+    if (this.hover !== null) {
+      var hx = X(this.hover);
+      ctx.strokeStyle = axis; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(Math.round(hx) + 0.5, g.top); ctx.lineTo(Math.round(hx) + 0.5, g.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      var hoverT = this.hover;
+      this.series.forEach(function (s) {
+        var i = nearest(s.points, hoverT);
+        var pt = s.points[i];
+        if (Math.abs(pt[0] - hoverT) > s.medGap * 0.75 || pt[1] === null) return;
+        ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = css(s.color); ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+      });
+    }
+  };
+
+  // ------------------------------------------------------------------
+  // assembly
+  // ------------------------------------------------------------------
+  var kFmt = function (v) { return v >= 1000 ? (v / 1000).toFixed(1) + "M" : Math.round(v) + "k"; };
+  var charts = {
+    main: new TimeChart("c-main", "t-main", { includeZero: true, yFmt: kFmt }),
+    prices: new TimeChart("c-prices", "t-prices", { includeZero: true, yFmt: function (v) { return Math.round(v) + "%"; } }),
+    share: new TimeChart("c-share", "t-share", { yFmt: function (v) { return v.toFixed(1) + "%"; } }),
+    sales: new TimeChart("c-sales", "t-sales", { includeZero: true, yFmt: kFmt }),
+    supply: new TimeChart("c-supply", "t-supply", { includeZero: true, yFmt: function (v) { return v.toFixed(0); } }),
+    mortgage: new TimeChart("c-mortgage", "t-mortgage", { includeZero: true, yFmt: function (v) { return v.toFixed(0) + "%"; } }),
+    ca: new TimeChart("c-ca", "t-ca", { includeZero: true, yFmt: kFmt })
+  };
+
+  function S(id) {
+    var p = state.p;
+    return (p && p.series && p.series[id]) || null;
+  }
+
+  function bandList(which, fromMs) {
+    var p = state.p, out = [];
+    if (!p || !p.recessions) return out;
+    var defs = [
+      { key: "us", set: p.recessions.us, varName: "--series-1" },
+      { key: "ca", set: p.recessions.ca, varName: "--series-2" }
+    ];
+    var alpha = parseFloat(css("--band-alpha")) || 0.09;
+    defs.forEach(function (d) {
+      if (which.indexOf(d.key) === -1 || !d.set) return;
+      d.set.bands.forEach(function (b) {
+        var start = ms(b.peak + "-01");
+        var trough = b.trough.split("-");
+        var end = Date.UTC(+trough[0], +trough[1], 1) - 86400000;
+        if (end < fromMs) return;
+        out.push({ start: start, end: end, fill: rgba(css(d.varName), alpha) });
+      });
+    });
+    return out;
+  }
+
+  function legend(elId, items) {
+    document.getElementById(elId).innerHTML = items.map(function (it) {
+      var cls = "swatch" + (it.dash ? " dashed" : "") + (it.band ? " band" : "");
+      var style = it.band
+        ? "background:" + rgba(css(it.color), parseFloat(css("--band-alpha")) * 2)
+        : (it.dash ? "border-top-color:" + css(it.color) : "background:" + css(it.color));
+      return '<span class="item"><span class="' + cls + '" style="' + style + '"></span>' + it.name + "</span>";
+    }).join("");
+  }
+
+  function cutoffMs() {
+    if (state.range === "max") return -Infinity;
+    var e = S("us_starts");
+    if (!e) return -Infinity;
+    return ms(e.as_of) - parseInt(state.range, 10) * YEAR;
+  }
+
+  function clip(points, from) {
+    return from === -Infinity ? points : points.filter(function (pt) { return pt[0] >= from; });
+  }
+
+  function renderMain() {
+    var from = cutoffMs();
+    var oneF = state.scope === "1f";
+    var starts = S(oneF ? "us_starts_1f" : "us_starts");
+    var permits = S(oneF ? "us_permits_1f" : "us_permits");
+    var series = [];
+    if (starts) series.push({ name: oneF ? "Single-family starts" : "Starts", color: "--series-1", points: clip(pts(starts), from) });
+    if (permits) series.push({ name: oneF ? "Single-family permits" : "Permits", color: "--series-3", width: 1.5, points: clip(pts(permits), from) });
+    charts.main.setData(series, bandList(["us"], from));
+    legend("legend-main", [
+      { name: oneF ? "Single-family starts, SAAR" : "Total starts, SAAR", color: "--series-1" },
+      { name: oneF ? "Single-family permits, SAAR" : "Total permits, SAAR", color: "--series-3" },
+      { name: "US recessions (NBER)", color: "--series-1", band: true }
+    ]);
+  }
+
+  function renderRest() {
+    var cs = S("us_hpi_cs_yoy"), fh = S("us_hpi_fhfa_yoy"), nh = S("ca_nhpi_yoy");
+    charts.prices.setData([
+      cs && { name: "Case-Shiller US", color: "--series-1", points: pts(cs), fmt: fmtPct1 },
+      fh && { name: "FHFA US", color: "--series-4", points: pts(fh), fmt: fmtPct1 },
+      nh && { name: "Canada NHPI", color: "--series-2", points: pts(nh), fmt: fmtPct1 }
+    ].filter(Boolean), bandList(["us", "ca"], fh ? pts(fh)[0][0] : -Infinity));
+    legend("legend-prices", [
+      { name: "Case-Shiller national, from 1987", color: "--series-1" },
+      { name: "FHFA all-transactions, from 1975", color: "--series-4" },
+      { name: "Canada NHPI (new construction), from 1981", color: "--series-2" },
+      { name: "US recessions", color: "--series-1", band: true },
+      { name: "Canadian recessions", color: "--series-2", band: true }
+    ]);
+
+    var share = S("us_resid_invest_share");
+    var an = state.p.analysis || {};
+    var mean = an.status && an.status.resid_share ? an.status.resid_share.mean_since_1947 : undefined;
+    charts.share.opts.threshold = mean;
+    charts.share.opts.thresholdLabel = mean !== undefined ? "1947-now mean " + mean.toFixed(1) + "%" : "";
+    if (share) charts.share.setData([
+      { name: "Residential investment / GDP", color: "--series-1", points: pts(share), fmt: fmtPct2v }
+    ], bandList(["us"], -Infinity));
+    legend("legend-share", [
+      { name: "Share of GDP, quarterly", color: "--series-1" },
+      { name: "US recessions", color: "--series-1", band: true }
+    ]);
+
+    var sales = S("us_new_home_sales"), supply = S("us_months_supply");
+    if (sales) charts.sales.setData([{ name: "New home sales", color: "--series-1", points: pts(sales) }], bandList(["us"], pts(sales)[0][0]));
+    if (supply) charts.supply.setData([{ name: "Months' supply", color: "--series-4", points: pts(supply), fmt: function (v) { return v.toFixed(1) + " mo"; } }], bandList(["us"], pts(supply)[0][0]));
+
+    var mort = S("us_mortgage_30y");
+    if (mort) charts.mortgage.setData([
+      { name: "30y fixed", color: "--series-2", points: pts(mort), fmt: fmtPct2v }
+    ], bandList(["us"], pts(mort)[0][0]));
+    legend("legend-mortgage", [
+      { name: "30-year fixed, weekly", color: "--series-2" },
+      { name: "US recessions", color: "--series-1", band: true }
+    ]);
+
+    var caM = S("ca_starts_saar"), caQ = S("ca_starts_trailing4q"), ca1 = S("ca_starts_1f_trailing4q");
+    charts.ca.setData([
+      caQ && { name: "Trailing 4 quarters", color: "--series-3", width: 1.5, points: pts(caQ) },
+      ca1 && { name: "Single-detached, trailing 4q", color: "--series-4", dash: true, width: 1.5, points: pts(ca1) },
+      caM && { name: "Monthly SAAR", color: "--series-2", points: pts(caM) }
+    ].filter(Boolean), bandList(["ca"], -Infinity));
+    legend("legend-ca", [
+      { name: "Monthly SAAR, from 1990", color: "--series-2" },
+      { name: "Trailing 4-quarter total, from 1948", color: "--series-3" },
+      { name: "Single-detached, from 1955 (dotted)", color: "--series-4", dash: true },
+      { name: "Canadian recessions (C.D. Howe)", color: "--series-2", band: true }
+    ]);
+  }
+
+  function renderAll() { renderMain(); renderRest(); }
+
+  // ------------------------------------------------------------------
+  // tokens: prose numbers render from data, never from markup
+  // ------------------------------------------------------------------
+  function fillTokens(map) {
+    document.querySelectorAll("[data-tok]").forEach(function (el) {
+      var key = el.getAttribute("data-tok");
+      if (map[key] === undefined) { el.classList.add("tok-missing"); el.textContent = "⟨" + key + "⟩"; }
+      else el.textContent = map[key];
+    });
+  }
+
+  function buildTokens(p) {
+    var map = {};
+    var an = p.analysis || {};
+    var ep = an.episodes || {};
+    var st = an.status || {};
+    if (ep.rule) map.rule_statement = ep.rule.statement;
+    var stats = ep.stats || {};
+    if (stats.credited_episodes !== undefined) {
+      map.credited = String(stats.credited_episodes);
+      map.median_lead = String(stats.median_lead_from_crest_months);
+      map.lead_range = stats.min_lead_from_crest_months + " to " + stats.max_lead_from_crest_months;
+      map.alarm_led = String(stats.alarm_led);
+      map.uncredited = (stats.uncredited_recessions || []).map(monthWord).join(" and ") || "none";
+    }
+    if (st.resid_share) {
+      map.share_mean = st.resid_share.mean_since_1947.toFixed(1) + "%";
+      map.share_latest = st.resid_share.latest[1].toFixed(1) + "% (" + st.resid_share.latest[0].slice(0, 7) + ")";
+    }
+    var supply = S("us_months_supply");
+    if (supply) map.supply_latest = supply.obs[supply.obs.length - 1][1].toFixed(1);
+    // The newest-episode footnote renders from the computed row, so it stays
+    // true when that row eventually resolves either way (the yield lesson).
+    if (ep.episodes && ep.episodes.length) {
+      var newest = ep.episodes[ep.episodes.length - 1];
+      map.newest_label = newest.start.slice(0, 4);
+      var shape = "in the newest episode starts fell " + Math.abs(newest.depth_pct).toFixed(0) +
+                  "% from their " + monthWord(newest.crest.month) +
+                  " peak to a bottom in " + monthWord(newest.bottom.month);
+      if (newest.outcome === "none_in_window") {
+        map.newest_row = shape +
+          ", and no recession came within the window. It joins the false " +
+          "positives, or counts as damage absorbed without a downturn; the " +
+          "distinction is one only history settles.";
+      } else if (newest.outcome === "pending") {
+        map.newest_row = shape + "; its attribution window is still open.";
+      } else if (newest.outcome === "coincident") {
+        map.newest_row = shape + "; the " +
+          monthWord(newest.recessions[0]) + " recession began before the " +
+          "alarm fired, " + newest.lead_from_crest_months +
+          " months after the peak in starts.";
+      } else {
+        map.newest_row = shape + ", followed by the " +
+          monthWord(newest.recessions[0]) + " recession " +
+          newest.lead_from_crest_months + " months after the peak in starts.";
+      }
+    }
+    return map;
+  }
+
+  function buildChip(p) {
+    var st = (p.analysis || {}).status || {};
+    var sf = st.us_starts_1f, tot = st.us_starts;
+    var chip = document.getElementById("chip");
+    if (!sf || !tot) return;
+    var signal = !!st.signal_active;
+    var html;
+    if (signal) {
+      html = "<b>Rollover signal</b> · single-family starts " + sf.yoy_3mma_pct.toFixed(1) +
+             "% below a year ago";
+    } else {
+      html = "<b>No rollover signal</b> · starts " + fmtK(tot.latest[1]) + " SAAR, " +
+             Math.abs(tot.drawdown_pct).toFixed(0) + "% below their " +
+             monthWord(tot.peak_3mma_5y[0]) + " peak · single-family " +
+             fmtPct1(sf.yoy_3mma_pct) + " year on year";
+    }
+    chip.innerHTML = '<span class="dot"></span><span>' + html + "</span>";
+    chip.setAttribute("data-state", signal ? "signal" : "normal");
+    chip.hidden = false;
+  }
+
+  function buildTiles(p) {
+    var an = p.analysis || {};
+    var st = an.status || {};
+    var t = [];
+    function month(iso) { return iso.slice(0, 7); }
+    var tot = st.us_starts, sf = st.us_starts_1f;
+    if (tot) t.push({ label: "US starts", color: "var(--series-1)",
+                      value: fmtK(tot.latest[1]),
+                      note: month(tot.latest[0]) + " · " + Math.abs(tot.drawdown_pct).toFixed(0) + "% below " + monthWord(tot.peak_3mma_5y[0]) + " peak" });
+    if (sf) t.push({ label: "Single-family", color: "var(--series-1)",
+                     value: fmtK(sf.latest[1]),
+                     note: month(sf.latest[0]) + " · " + fmtPct1(sf.yoy_3mma_pct) + " YoY (3mo avg)" });
+    var permits = S("us_permits");
+    if (permits) t.push({ label: "Permits", color: "var(--series-3)",
+                          value: fmtK(permits.obs[permits.obs.length - 1][1]),
+                          note: month(permits.as_of) + " · the forward leg" });
+    if (st.resid_share) t.push({ label: "Share of GDP", color: "var(--series-4)",
+                                 value: st.resid_share.latest[1].toFixed(1) + "%",
+                                 note: "vs " + st.resid_share.mean_since_1947.toFixed(1) + "% mean since 1947" });
+    var stats = (an.episodes || {}).stats;
+    if (stats && stats.median_lead_from_crest_months !== undefined) {
+      t.push({ label: "Median warning", color: "var(--series-2)",
+               value: stats.median_lead_from_crest_months + " mo",
+               note: "starts peak to NBER peak, " + stats.credited_episodes + " recessions" });
+    }
+    document.getElementById("tiles").innerHTML = t.map(function (x) {
+      return '<div class="tile"><div class="label"><span class="swatch" style="background:' + x.color + '"></span>' + x.label +
+             '</div><div class="value">' + x.value + '</div><div class="note">' + x.note + "</div></div>";
+    }).join("");
+  }
+
+  function buildEpisodes(p) {
+    var ep = p.analysis && p.analysis.episodes;
+    if (!ep || !ep.episodes) return;
+    var rows = ep.episodes.slice().reverse().map(function (e) {
+      var rec, lead;
+      if (e.recessions.length) {
+        rec = e.recessions.map(monthWord).join(" + ");
+        if (e.outcome === "coincident") rec += ' <span class="tag">(alarm trailed)</span>';
+        else rec += ' <span class="tag">(alarm led ' + e.lead_from_alarm_months + " mo)</span>";
+        lead = e.lead_from_crest_months + " mo";
+      } else if (e.outcome === "pending") {
+        rec = "<b>none (yet)</b>"; lead = "—";
+      } else {
+        rec = "none within window"; lead = "—";
+      }
+      return "<tr><td>" + monthWord(e.crest.month) + " (" + fmtK(e.crest.value) + ")" +
+             "</td><td>" + monthWord(e.start) +
+             "</td><td>" + monthWord(e.bottom.month) +
+             "</td><td>" + e.depth_pct.toFixed(0) + "%" +
+             "</td><td>" + rec + "</td><td>" + lead + "</td></tr>";
+    });
+    document.querySelector("#ep-tbl tbody").innerHTML = rows.join("");
+  }
+
+  function buildRevisions(log) {
+    var cap = document.getElementById("rev-cap");
+    var wrap = document.getElementById("rev-wrap");
+    if (!log || !log.total) {
+      cap.textContent = "No revisions to already-published observations logged yet; the first scheduled refreshes will start filling this in.";
+      return;
+    }
+    cap.textContent = log.total.toLocaleString() + " revision event" + (log.total === 1 ? "" : "s") +
+      " logged" + (log.recent.length < log.total ? " · showing the " + log.recent.length + " most recent" : "") + ".";
+    wrap.style.display = "";
+    document.querySelector("#rev-tbl tbody").innerHTML = log.recent.map(function (r) {
+      return "<tr><td>" + (r.observed_at || "").slice(0, 10) + "</td><td>" + (r.series || "") +
+             "</td><td>" + (r.changed || "") + "</td><td>" + ((r.span || []).join(" to ")) +
+             "</td><td>" + (r.max_delta === undefined ? "—" : r.max_delta) + "</td></tr>";
+    }).join("");
+  }
+
+  // ------------------------------------------------------------------
+  // wiring
+  // ------------------------------------------------------------------
+  document.querySelectorAll("[data-range]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-range]").forEach(function (o) { o.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      state.range = b.getAttribute("data-range");
+      renderMain();
+    });
+  });
+  document.querySelectorAll("[data-scope]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-scope]").forEach(function (o) { o.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      state.scope = b.getAttribute("data-scope");
+      renderMain();
+    });
+  });
+
+  var resizeTimer;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { Object.keys(charts).forEach(function (k) { charts[k].draw(); }); }, 120);
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    (mq.addEventListener ? mq.addEventListener.bind(mq, "change") : mq.addListener.bind(mq))(renderAll);
+  }
+
+  fetch("/api/data", { cache: "no-cache" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (p) {
+      state.p = p;
+      document.getElementById("status").style.display = "none";
+
+      var count = 0, obsTotal = 0, key;
+      for (key in p.series) { count++; obsTotal += p.series[key].obs.length; }
+      var starts = S("us_starts");
+      document.getElementById("stamp").textContent =
+        count + " series · " + obsTotal.toLocaleString() + " observations · US data through " +
+        (starts ? starts.as_of.slice(0, 7) : "—") + " · refreshed " +
+        (p.series_fetched_at || "").slice(0, 10) + " · built __BUILD_TIME__";
+
+      fillTokens(buildTokens(p));
+      buildChip(p);
+      buildTiles(p);
+      buildEpisodes(p);
+      buildRevisions(p.changelog);
+      renderAll();
+    })
+    .catch(function (e) {
+      document.getElementById("status").textContent = "Could not load the data (" + e.message + "). The updater may be briefly unavailable; try a reload in a minute.";
+    });
+})();
+</script>
+</body>
+</html>

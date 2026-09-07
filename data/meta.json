@@ -1,0 +1,5 @@
+{
+ "series_group": "meta",
+ "built": "2026-09-07",
+ "note": "Housing has no NY-Fed-equivalent published probability, so unlike yield this file carries no curated figure and there is no monthly hand ritual. Everything on the page is fetched or computed."
+}
