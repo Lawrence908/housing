@@ -6,8 +6,8 @@ to six quarters, and Leamer's Jackson Hole line ("housing IS the business cycle"
 framing the page earns or refutes with its own table. Everything serves that question.
 
 Site five of the family (diesel, debt, jobs, yield), third consumer of
-`/mnt/storage/apps/econ-core`. Written 2026-09-07; every series below was probed live from
-daedalus that day through econcore's own fetchers, so the depths are measured, not
+`econ-core`. Written 2026-09-07; every series below was probed live that
+day through econcore's own fetchers, so the depths are measured, not
 assumed, and every StatCan vector was resolved from cube metadata and title-verified,
 never guessed.
 
@@ -107,7 +107,7 @@ Clone the yield/jobs shape exactly; nothing here needs a new pattern.
   the econ family then continues in the free 8132-8137 block) + stdlib sidecar
   `housing-updater` (internal 8000). One Caddy site file, one services.yml entry with
   dashy and kuma blocks (compact keyword `"status":"ok"`).
-- Vendor econ-core (`./vendor.sh /mnt/storage/apps/housing`): `api/econcore.py` +
+- Vendor econ-core (`./vendor.sh ../housing`): `api/econcore.py` +
   `data/recessions.json`. StatCan fetches use `wds_vector(v, expect_title=...)` with the
   titles verified above, so a renumbered vector fails loudly.
 - `server.py` is yield's skeleton: FETCHED specs with provenance notes carrying the
