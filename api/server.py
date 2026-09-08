@@ -27,6 +27,7 @@ HTTP here is read-only. Runs happen via host cron calling
 """
 
 import json
+import math
 import os
 import sys
 import threading
@@ -328,6 +329,32 @@ def _yoy(avgs, periods=12):
     return out
 
 
+MONTH_WORDS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+# The chip's own rule, which is the episode threshold without the sustain
+# and merge conditions: EPISODE_RULE dates completed episodes, this says
+# whether the line is under water today.
+CHIP_RULE = ("The rollover signal is on when the 3-month average of "
+             "single-family starts sits 20% or more below its level a year "
+             "earlier.")
+
+
+def _month_word(iso):
+    parts = iso.split("-")
+    return "%s %s" % (MONTH_WORDS[int(parts[1]) - 1], parts[0])
+
+
+def _signed(value, places=1, suffix=""):
+    """The page's sign convention: U+2212 for negatives, never a hyphen."""
+    sign = "+" if value > 0 else ("−" if value < 0 else "")
+    return "%s%.*f%s" % (sign, places, abs(value), suffix)
+
+
+def _thousands(value):
+    return "{:,d}k".format(int(math.floor(value + 0.5)))
+
+
 def build_status(series):
     """The chip and tiles: where starts sit against their recent peak, and
     whether the rollover rule is signalling right now."""
@@ -359,6 +386,27 @@ def build_status(series):
         status["resid_share"] = {
             "latest": [share["obs"][-1][0], share["obs"][-1][1]],
             "mean_since_1947": round(sum(values) / len(values), 2),
+        }
+
+    tot = status.get("us_starts")
+    if sf and tot and sf["yoy_3mma_pct"] is not None:
+        signal = bool(status.get("signal_active"))
+        if signal:
+            # "below a year ago" already carries the sign; printing the
+            # negative as well would read as a double negative.
+            detail = "single-family starts %.1f%% below a year ago" % abs(sf["yoy_3mma_pct"])
+        else:
+            detail = ("starts %s SAAR, %.0f%% below their %s peak · "
+                      "single-family %s year on year") % (
+                _thousands(tot["latest"][1]), abs(tot["drawdown_pct"]),
+                _month_word(tot["peak_3mma_5y"][0]),
+                _signed(sf["yoy_3mma_pct"], 1, "%"))
+        status["headline"] = {
+            "state": "signal" if signal else "normal",
+            "label": "Rollover signal" if signal else "No rollover signal",
+            "detail": detail,
+            "as_of": sf["latest"][0],
+            "rule": CHIP_RULE,
         }
     return status
 
@@ -682,7 +730,14 @@ def build_data_payload():
     try:
         doc = _load("series.json")
         payload["series"] = doc.get("series", {})
-        payload["analysis"] = doc.get("analysis", {})
+        # The stored block is written by the refresh, which runs out of
+        # process; one written before the status contract existed has no
+        # headline, and the chip would stay hidden until the next scheduled
+        # run. Recomputing the cheap half here makes a deploy take effect now.
+        analysis = dict(doc.get("analysis", {}))
+        if "headline" not in (analysis.get("status") or {}):
+            analysis["status"] = build_status(payload["series"])
+        payload["analysis"] = analysis
         payload["series_fetched_at"] = doc.get("fetched_at")
         payload["series_errors"] = doc.get("errors", {})
     except Exception as exc:  # noqa: BLE001 - charts degrade, page renders
@@ -718,10 +773,16 @@ class Handler(BaseHTTPRequestHandler):
                 doc = _load("series.json")
                 starts = doc.get("series", {}).get("us_starts", {})
                 st = doc.get("analysis", {}).get("status", {})
+                # A stored block written before the status contract existed
+                # has no headline; recompute so health and /api/data agree
+                # rather than the hub seeing one and the page the other.
+                if "headline" not in st:
+                    st = build_status(doc.get("series", {}))
                 self._send(200, {
                     "status": "ok",
                     "series": len(doc.get("series", {})),
                     "latest": starts.get("as_of"),
+                    "headline": st.get("headline"),
                     "signal_active": st.get("signal_active"),
                     "errors": len(doc.get("errors", {})),
                     "fetched_at": doc.get("fetched_at"),

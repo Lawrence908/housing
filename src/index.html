@@ -743,24 +743,17 @@ td .tag { color: var(--muted); font-size: 0.78rem; }
     return map;
   }
 
+  /* Rendered from analysis.status.headline rather than recomposed here: the
+     server owns the rule and its wording, so the hub and the page cannot
+     drift into saying different things about the same reading. */
   function buildChip(p) {
-    var st = (p.analysis || {}).status || {};
-    var sf = st.us_starts_1f, tot = st.us_starts;
+    var head = ((p.analysis || {}).status || {}).headline;
     var chip = document.getElementById("chip");
-    if (!sf || !tot) return;
-    var signal = !!st.signal_active;
-    var html;
-    if (signal) {
-      html = "<b>Rollover signal</b> · single-family starts " + sf.yoy_3mma_pct.toFixed(1) +
-             "% below a year ago";
-    } else {
-      html = "<b>No rollover signal</b> · starts " + fmtK(tot.latest[1]) + " SAAR, " +
-             Math.abs(tot.drawdown_pct).toFixed(0) + "% below their " +
-             monthWord(tot.peak_3mma_5y[0]) + " peak · single-family " +
-             fmtPct1(sf.yoy_3mma_pct) + " year on year";
-    }
-    chip.innerHTML = '<span class="dot"></span><span>' + html + "</span>";
-    chip.setAttribute("data-state", signal ? "signal" : "normal");
+    if (!head) return;
+    chip.innerHTML = '<span class="dot"></span><span><b>' + head.label + "</b> · " +
+                     head.detail + "</span>";
+    chip.setAttribute("data-state", head.state);
+    chip.title = head.rule;
     chip.hidden = false;
   }
 
